@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const fs = require('fs').promises;
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,6 +11,19 @@ const PORT = '3000';
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
+});
+
+app.get('/talker', async (_req, res, _next) => {
+  try {
+    const file = await fs.readFile('./talker.json');
+    const fileParse = JSON.parse(file);
+
+    if (fileParse === 0) return res.status(200).json([]);
+
+    return res.status(200).json(fileParse);
+  } catch (e) {
+    console.log('Erro');
+  }
 });
 
 app.listen(PORT, () => {
