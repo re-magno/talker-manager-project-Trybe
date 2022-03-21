@@ -33,7 +33,7 @@ app.get('/talker/:id', async (req, res, _next) => {
     const talkers = await fs.readFile('./talker.json');
     const talkersParse = JSON.parse(talkers);
 
-    const talker = talkersParse.find((t) => t.id === parseInt(id));
+    const talker = talkersParse.find((t) => t.id === Number(id));
     console.log(talkersParse);
 
     if (!talker) {
