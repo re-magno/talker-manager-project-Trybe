@@ -1,8 +1,18 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { randomUUID } = require('crypto');
 const fs = require('fs').promises;
-const { isValidEmail, isValidPassword } = require('./middlewares/validations');
+const { randomUUID } = require('crypto');
+const talkersUtils = require('./utils/fs-utils');
+const {
+  isValidEmail,
+  isValidPassword,
+  isValidToken,
+  isValidName,
+  isValidAge,
+  isValidTalk,
+  isValidDate,
+  isValidRate,
+} = require('./middlewares/validations');
 
 const app = express();
 app.use(bodyParser.json());
@@ -24,7 +34,7 @@ app.get('/talker', async (_req, res, _next) => {
 
     return res.status(200).json(fileParse);
   } catch (e) {
-    console.log('Erro');
+    console.log(e);
   }
 });
 
@@ -44,14 +54,42 @@ app.get('/talker/:id', async (req, res, _next) => {
 
     return res.status(200).json(talker);
   } catch (e) {
-    console.log('Erro');
+    console.log(e);
   }
 });
 
 app.post('/login', isValidEmail, isValidPassword, (_req, res) => {
   const token = randomUUID().substring(0, 16);
-  console.log(token);
+  
   res.status(200).json({ token });
+});
+
+app.use(
+  isValidToken,
+  isValidName,
+  isValidAge,
+  isValidTalk,
+  isValidDate,
+  isValidRate,
+);
+
+app.post('/talker', async (req, res) => {
+  try {
+    const talkers = await talkersUtils.getTakers();
+
+    const lastUsedId = talkers[talkers.length - 1].id;
+    const id = lastUsedId + 1;
+
+    const talker = { id, ...req.body };
+
+    talkers.push(talker);
+
+    await talkersUtils.setTalkers(talkers);
+
+    return res.status(201).json(talker);
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 app.listen(PORT, () => {
