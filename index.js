@@ -92,6 +92,25 @@ app.post('/talker', async (req, res) => {
   }
 });
 
+app.put('/talker/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, age, talk } = req.body;
+  try {
+    const talkers = await talkersUtils.getTakers();
+    const talkerIndex = talkers.findIndex((t) => t.id === +id);
+
+    talkers[talkerIndex] = { ...talkers[talkerIndex], name, age, talk };
+    console.log(talkers);
+    await talkersUtils.setTalkers(talkers);
+
+    const editedTalker = await talkersUtils.getTakerById(id);
+
+    return res.status(200).json(editedTalker);
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 app.listen(PORT, () => {
   console.log('Online');
 });
