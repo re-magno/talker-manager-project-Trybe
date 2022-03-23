@@ -61,11 +61,27 @@ app.get('/talker/:id', async (req, res, _next) => {
 app.post('/login', isValidEmail, isValidPassword, (_req, res) => {
   const token = randomBytes(8).toString('hex');
 
-  res.status(200).json({ token });
+  return res.status(200).json({ token });
+});
+
+app.use(isValidToken);
+
+app.delete('/talker/:id', async (req, res) => {
+const { id } = req.params;
+try {
+  const talkers = await talkersUtils.getTakers();
+
+  const newTalkers = talkers.filter((talker) => talker.id !== +id);
+
+  await talkersUtils.setTalkers(newTalkers);
+
+  return res.status(204).end();
+} catch (e) {
+  console.log(e);
+}
 });
 
 app.use(
-  isValidToken,
   isValidName,
   isValidAge,
   isValidTalk,
