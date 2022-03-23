@@ -59,7 +59,7 @@ app.get('/talker/:id', async (req, res, _next) => {
 });
 
 app.post('/login', isValidEmail, isValidPassword, (_req, res) => {
-  const token = randomBytes(36).toString('hex').substring(0, 16);
+  const token = randomBytes(8).toString('hex');
 
   res.status(200).json({ token });
 });
