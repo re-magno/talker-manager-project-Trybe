@@ -16,4 +16,12 @@ async function setTalkers(newTalker) {
   await fs.writeFile('./talker.json', JSON.stringify(newTalker));
 }
 
-module.exports = { getTakers, setTalkers, getTakerById };
+async function searchTalker(q) {
+  const allTalkers = await getTakers();
+
+  if (!q) return allTalkers;
+
+  return allTalkers.filter(({ name }) => name.includes(q));
+}
+
+module.exports = { getTakers, setTalkers, getTakerById, searchTalker };

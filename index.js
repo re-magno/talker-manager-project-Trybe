@@ -38,6 +38,20 @@ app.get('/talker', async (_req, res, _next) => {
   }
 });
 
+app.get('/talker/search', isValidToken, async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    const filter = await talkersUtils.searchTalker(q);
+
+    if (!filter) return res.status(200).json([]);
+
+    return res.status(200).json(filter);
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 app.get('/talker/:id', async (req, res, _next) => {
   try {
     const { id } = req.params;
@@ -68,17 +82,17 @@ app.use(isValidToken);
 
 app.delete('/talker/:id', async (req, res) => {
 const { id } = req.params;
-try {
-  const talkers = await talkersUtils.getTakers();
+  try {
+    const talkers = await talkersUtils.getTakers();
 
-  const newTalkers = talkers.filter((talker) => talker.id !== +id);
+    const newTalkers = talkers.filter((talker) => talker.id !== +id);
 
-  await talkersUtils.setTalkers(newTalkers);
+    await talkersUtils.setTalkers(newTalkers);
 
-  return res.status(204).end();
-} catch (e) {
-  console.log(e);
-}
+    return res.status(204).end();
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 app.use(
