@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
-const { randomUUID } = require('crypto');
+const { randomBytes } = require('crypto');
 const talkersUtils = require('./utils/fs-utils');
 const {
   isValidEmail,
@@ -59,8 +59,8 @@ app.get('/talker/:id', async (req, res, _next) => {
 });
 
 app.post('/login', isValidEmail, isValidPassword, (_req, res) => {
-  const token = randomUUID().substring(0, 16);
-  
+  const token = randomBytes(36).toString('hex').substring(0, 16);
+
   res.status(200).json({ token });
 });
 
