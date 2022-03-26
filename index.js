@@ -3,16 +3,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 const { randomBytes } = require('crypto');
 const talkersUtils = require('./utils/fs-utils');
-const {
-  isValidEmail,
-  isValidPassword,
-  isValidToken,
-  isValidName,
-  isValidAge,
-  isValidTalk,
-  isValidDate,
-  isValidRate,
-} = require('./middlewares/validations');
+const validators = require('./middlewares/validations');
 
 const app = express();
 app.use(bodyParser.json());
@@ -38,7 +29,7 @@ app.get('/talker', async (_req, res, _next) => {
   }
 });
 
-app.get('/talker/search', isValidToken, async (req, res) => {
+app.get('/talker/search', validators.isValidToken, async (req, res) => {
   try {
     const { q } = req.query;
 
@@ -72,13 +63,13 @@ app.get('/talker/:id', async (req, res, _next) => {
   }
 });
 
-app.post('/login', isValidEmail, isValidPassword, (_req, res) => {
+app.post('/login', validators.login, (_req, res) => {
   const token = randomBytes(8).toString('hex');
 
   return res.status(200).json({ token });
 });
 
-app.use(isValidToken);
+app.use(validators.isValidToken);
 
 app.delete('/talker/:id', async (req, res) => {
 const { id } = req.params;
@@ -95,13 +86,7 @@ const { id } = req.params;
   }
 });
 
-app.use(
-  isValidName,
-  isValidAge,
-  isValidTalk,
-  isValidDate,
-  isValidRate,
-);
+app.use(validators.talker);
 
 app.post('/talker', async (req, res) => {
   try {
@@ -130,7 +115,7 @@ app.put('/talker/:id', async (req, res) => {
     const talkerIndex = talkers.findIndex((t) => t.id === +id);
 
     talkers[talkerIndex] = { ...talkers[talkerIndex], name, age, talk };
-    console.log(talkers);
+    // console.log(talkers);
     await talkersUtils.setTalkers(talkers);
 
     const editedTalker = await talkersUtils.getTakerById(id);
@@ -139,6 +124,11 @@ app.put('/talker/:id', async (req, res) => {
   } catch (e) {
     console.log(e);
   }
+});
+
+app.use((err, _req, res, _next) => {
+  if (!err.code) return res.status(500).json({ message: err.message });
+  return res.status(err.code).json({ message: err.message });
 });
 
 app.listen(PORT, () => {

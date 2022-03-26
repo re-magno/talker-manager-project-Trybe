@@ -1,137 +1,89 @@
-const isValidEmail = (req, res, next) => {
+const errMessage = {
+  emailRequired: 'O campo "email" é obrigatório',
+  invalidEmail: 'O "email" deve ter o formato "email@email.com"',
+  passwordRequired: 'O campo "password" é obrigatório',
+  invalidPassword: 'O "password" deve ter pelo menos 6 caracteres',
+  tokenNotFound: 'Token não encontrado',
+  invalidToken: 'Token inválido',
+  nameRequired: 'O campo "name" é obrigatório',
+  invalidName: 'O "name" deve ter pelo menos 3 caracteres',
+  ageRequired: 'O campo "age" é obrigatório',
+  invalidAge: 'A pessoa palestrante deve ser maior de idade',
+  talkRequired: 'O campo "talk" é obrigatório e "watchedAt" e "rate" não podem ser vazios',
+  invalidDate: 'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"',
+  invalidRate: 'O campo "rate" deve ser um inteiro de 1 à 5',
+};
+
+const err = (code, message) => ({ code, message });
+
+const isValidEmail = (req, _res, next) => {
   const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'O campo "email" é obrigatório' });
-  }
-
+  if (!email) return next(err(400, errMessage.emailRequired));
   const regex = /^[a-z0-9.]+@[a-z0-9]+\.[a-z]{2,}$/;
-
-  if (!email.match(regex)) {
-    return res.status(400).json({
-      message: 'O "email" deve ter o formato "email@email.com"',
-    });
-  }
-
+  if (!email.match(regex)) return next(err(400, errMessage.invalidEmail));
   next();
 };
 
-const isValidPassword = (req, res, next) => {
+const isValidPassword = (req, _res, next) => {
   const { password } = req.body;
-
-  if (!password) {
-    return res.status(400).json({
-      message: 'O campo "password" é obrigatório',
-    });
-  }
-
-  if (password.length < 6) {
-    return res.status(400).json({
-      message: 'O "password" deve ter pelo menos 6 caracteres',
-    });
-  }
-
+  if (!password) return next(err(400, errMessage.passwordRequired));
+  if (password.length < 6) return next(err(400, errMessage.invalidPassword));
   next();
 };
 
-const isValidToken = (req, res, next) => {
+const isValidToken = (req, _res, next) => {
   const { authorization } = req.headers;
-
-  if (!authorization) {
-    return res.status(401).json({
-      message: 'Token não encontrado',
-    });
-  }
-
-  if (authorization.length < 16) {
-    return res.status(401).json({
-      message: 'Token inválido',
-    });
-  }
-
+  if (!authorization) return next(err(401, errMessage.tokenNotFound));
+  if (authorization.length < 16) return next(err(401, errMessage.invalidToken));
   next();
 };
 
-const isValidName = (req, res, next) => {
+const isValidName = (req, _res, next) => {
   const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ 
-      message: 'O campo "name" é obrigatório',
-    });
-  }
-
-  if (name.length < 3) {
-    return res.status(400).json({
-      message: 'O "name" deve ter pelo menos 3 caracteres',
-    });
-  }
-
+  if (!name) return next(err(400, errMessage.nameRequired));
+  if (name.length < 3) return next(err(400, errMessage.invalidName));
   next();
 };
 
-const isValidAge = (req, res, next) => {
+const isValidAge = (req, _res, next) => {
   const { age } = req.body;
-
-  if (!age) {
-    return res.status(400).json({ 
-      message: 'O campo "age" é obrigatório',
-    });
-  }
-
-  if (Number(age) < 18) {
-    return res.status(400).json({
-      message: 'A pessoa palestrante deve ser maior de idade',
-    });
-  }
-
+  if (!age) return next(err(400, errMessage.ageRequired));
+  if (Number(age) < 18) return next(err(400, errMessage.invalidAge));
   next();
 };
 
-const isValidTalk = (req, res, next) => {
+const isValidTalk = (req, _res, next) => {
   const { talk } = req.body;
-  // const { watchedAt, rate } = talk;
-  const message = 'O campo "talk" é obrigatório e "watchedAt" e "rate" não podem ser vazios';
-
   if (!talk || !talk.watchedAt || (!talk.rate && talk.rate !== 0)) {
-    return res.status(400).json({ message });
+    return next(err(400, errMessage.talkRequired));
   }
-
   next();
 };
 
-const isValidDate = (req, res, next) => {
+const isValidDate = (req, _res, next) => {
   const { talk: { watchedAt } } = req.body;
-  const message = 'O campo "watchedAt" deve ter o formato "dd/mm/aaaa"';
-
   const r = /^[0-9]{2}[/]{1}[0-9]{2}[/]{1}[0-9]{4}$/g;
-
   if (watchedAt.length !== 10 || !watchedAt.match(r)) {
-    return res.status(400).json({ message });
+    return next(err(400, errMessage.invalidDate));
   }
-
   next();
 };
 
 const isValidRate = (req, res, next) => {
   const { talk: { rate } } = req.body;
-
-  const message = 'O campo "rate" deve ser um inteiro de 1 à 5';
-
   if (!Number.isInteger(rate) || Number(rate) < 1 || Number(rate) > 5) {
-    return res.status(400).json({ message });
+    return next(err(400, errMessage.invalidRate));
   }
-
   next();
 };
 
-module.exports = {
-  isValidEmail,
-  isValidPassword,
-  isValidToken,
+const login = [isValidEmail, isValidPassword];
+const talker = [
   isValidName,
   isValidAge,
   isValidTalk,
   isValidDate,
   isValidRate,
-};
+];
+
+module.exports = { isValidToken, login, talker };
