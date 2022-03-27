@@ -1,9 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs').promises;
-const { randomBytes } = require('crypto');
-const talkersUtils = require('./utils/fs-utils');
 const validators = require('./middlewares/validations');
+const talkerServ = require('./services/talkerServices');
+const { getToken } = require('./services/loginServices');
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,113 +15,63 @@ app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
 
-app.get('/talker', async (_req, res, _next) => {
+app.get('/talker', async (_req, res, next) => {
   try {
-    const file = await fs.readFile('./talker.json');
-    const fileParse = JSON.parse(file);
-
-    if (fileParse === 0) return res.status(200).json([]);
-
-    return res.status(200).json(fileParse);
-  } catch (e) {
-    console.log(e);
+    const talkers = await talkerServ.getAll();
+    return res.status(200).json(talkers);
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/talker/search', validators.isValidToken, async (req, res) => {
+app.get('/talker/search', validators.isValidToken, async (req, res, next) => {
   try {
-    const { q } = req.query;
-
-    const filter = await talkersUtils.searchTalker(q);
-
-    if (!filter) return res.status(200).json([]);
-
-    return res.status(200).json(filter);
-  } catch (e) {
-    console.log(e);
+    const talkers = await talkerServ.search(req.body);
+    return res.status(200).json(talkers);
+  } catch (err) {
+    next(err);
   }
 });
 
-app.get('/talker/:id', async (req, res, _next) => {
+app.get('/talker/:id', async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    const talkers = await fs.readFile('./talker.json');
-    const talkersParse = JSON.parse(talkers);
-
-    const talker = talkersParse.find((t) => t.id === Number(id));
-
-    if (!talker) {
-      return res.status(404).json({
-        message: 'Pessoa palestrante não encontrada' });
-    }
-
+    const talker = await talkerServ.getById(req.params);
     return res.status(200).json(talker);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    next(err);
   }
 });
 
-app.post('/login', validators.login, (_req, res) => {
-  const token = randomBytes(8).toString('hex');
-
-  return res.status(200).json({ token });
-});
+app.post('/login', validators.login, (_req, res) => res.status(200).json({ token: getToken() }));
 
 app.use(validators.isValidToken);
 
-app.delete('/talker/:id', async (req, res) => {
-const { id } = req.params;
+app.delete('/talker/:id', async (req, res, next) => {
   try {
-    const talkers = await talkersUtils.getTakers();
-
-    const newTalkers = talkers.filter((talker) => talker.id !== +id);
-
-    await talkersUtils.setTalkers(newTalkers);
-
+    await talkerServ.remove(req.params);
     return res.status(204).end();
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    next(err);
   }
 });
 
 app.use(validators.talker);
 
-app.post('/talker', async (req, res) => {
+app.post('/talker', async (req, res, next) => {
   try {
-    const talkers = await talkersUtils.getTakers();
-
-    const lastUsedId = talkers[talkers.length - 1].id;
-    const id = lastUsedId + 1;
-
-    const talker = { id, ...req.body };
-
-    talkers.push(talker);
-
-    await talkersUtils.setTalkers(talkers);
-
+    const talker = await talkerServ.create(req.body);
     return res.status(201).json(talker);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    next(err);
   }
 });
 
-app.put('/talker/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, age, talk } = req.body;
+app.put('/talker/:id', async (req, res, next) => {
   try {
-    const talkers = await talkersUtils.getTakers();
-    const talkerIndex = talkers.findIndex((t) => t.id === +id);
-
-    talkers[talkerIndex] = { ...talkers[talkerIndex], name, age, talk };
-    // console.log(talkers);
-    await talkersUtils.setTalkers(talkers);
-
-    const editedTalker = await talkersUtils.getTakerById(id);
-
+    const editedTalker = await talkerServ.update(req.body, req.params);
     return res.status(200).json(editedTalker);
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    next(err);
   }
 });
 
