@@ -1,12 +1,10 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const validators = require('./middlewares/validations');
-// const talkerServ = require('./services/talkerServices');
-const { getToken } = require('./controllers/login');
-const { getAll, getById, remove, create, update, search } = require('./controllers/talker');
+const { errorHandler } = require('./middlewares/errorHandler');
+const loginRoute = require('./routes/login');
+const talkerRoute = require('./routes/talker');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 const HTTP_OK_STATUS = 200;
 const PORT = '3000';
@@ -16,28 +14,10 @@ app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
 
-app.get('/talker', getAll);
+app.use('/login', loginRoute);
+app.use('/talker', talkerRoute);
 
-app.get('/talker/search', validators.isValidToken, search);
-
-app.get('/talker/:id', getById);
-
-app.post('/login', validators.login, getToken);
-
-app.use(validators.isValidToken);
-
-app.delete('/talker/:id', remove);
-
-app.use(validators.talker);
-
-app.post('/talker', create);
-
-app.put('/talker/:id', update);
-
-app.use((err, _req, res, _next) => {
-  if (!err.code) return res.status(500).json({ message: err.message });
-  return res.status(err.code).json({ message: err.message });
-});
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log('Online');
